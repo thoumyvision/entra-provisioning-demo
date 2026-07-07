@@ -101,7 +101,28 @@ That progression, from shared password to one-time pass to manager relay to firs
 is itself the strongest security answer in the demo, because it thinks past the happy path. It was
 reached by refusing to accept the first plausible answer.
 
-### 7. Offline `-WhatIf`: zero setup, zero risk
+### 7. The pass had to be valid when the hire actually arrives
+
+This link in the credential chain was forged during the build, not the design, which is exactly
+why it is worth recording. The first implementation issued the Temporary Access Pass with a
+60-minute lifetime counted from the moment the script runs. On a screenshare that looks fine. In
+practice it is broken: the pass reaches the hire through an asynchronous email to their manager,
+and accounts are routinely provisioned days before someone's first day, so a 60-minute countdown
+starting at provisioning time is dead long before the new hire ever sits down.
+
+The correction was to stop thinking in "minutes from now" and start thinking in "the hire's start
+date." The CSV gained a StartDate column, and the script now sets the pass's `startDateTime` to the
+onboarding day with a workday-length window, bounded by the tenant's own Temporary Access Pass
+policy. The prompt was updated to ask for this explicitly, so the chain of evidence stays honest:
+the requirement lives in the prompt, the behavior lives in the script.
+
+Then the review earned its keep. It flagged that the activation timestamp was being built with no
+explicit time zone, so on a host east of UTC+8 the pass would activate a calendar day earlier than
+the date shown to the manager, a quiet, geography-dependent bug of the kind that ships when nobody
+is looking. Pinning the instant to UTC closed it. The point is not that the first cut had a bug; it
+is that a disciplined process expects one and goes looking before the interviewer does.
+
+### 8. Offline `-WhatIf`: zero setup, zero risk
 
 The demo runs in `-WhatIf` mode, fully offline. It connects to no tenant, needs no Graph module
 installed, creates no stray users, and prints exactly what it *would* do. That is itself a
