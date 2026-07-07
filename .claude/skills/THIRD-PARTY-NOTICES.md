@@ -7,6 +7,10 @@ Skills under `.claude/skills/` in this repo come from two sources:
 - `pwsh-standards/` — Marcus Whitman's own codified PowerShell standards skill. The same skill
   named in `prompt/prompt.md` ("follow my pwsh-standards skill") and vendored as a point-in-time
   exhibit at `standards/pwsh-standards.SKILL.md`.
+- `graph-api/` — Marcus Whitman's own Microsoft Graph API reference skill (auth patterns,
+  pagination, error handling/retry, gotchas). Not one of the skills that gated this repo's original
+  build, but directly relevant: `src/New-EntraUsersFromCsv.ps1` is a Microsoft Graph script
+  end to end (cert-based `Connect-MgGraph`, `New-MgUser`, group membership, Temporary Access Pass).
 
 ## Vendored from Superpowers (MIT License, Copyright (c) 2025 Jesse Vincent)
 

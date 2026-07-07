@@ -152,8 +152,12 @@ above. The `.claude/skills/` folder is the live, functioning copy: open this rep
 and the same skills that gated the real build (`pwsh-standards`, plus the `using-superpowers`,
 `brainstorming`, `writing-plans`, `executing-plans`, and `subagent-driven-development` skills named
 in this repo's own `CLAUDE.md`) are active, with no dependency on Marcus's personal `~/.claude/`
-config. See `.claude/skills/THIRD-PARTY-NOTICES.md` for provenance and license on the five that
-come from the open-source Superpowers plugin.
+config. Also vendored: `graph-api`, Marcus's own Microsoft Graph reference skill. It didn't gate
+the original build, but it is what an agent would actually reach for while extending
+`src/New-EntraUsersFromCsv.ps1` (cert-based auth, pagination, error handling), which is exactly the
+kind of live change the interview's live segment exercises. See
+`.claude/skills/THIRD-PARTY-NOTICES.md` for provenance and license on the five that come from the
+open-source Superpowers plugin.
 
 ---
 
