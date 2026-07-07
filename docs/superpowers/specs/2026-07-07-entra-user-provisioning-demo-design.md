@@ -74,7 +74,7 @@ Least-privilege scopes documented in comment-based help as the app-registration 
 ### 3.3 Execution model — offline `-WhatIf` (confirmed)
 
 - **`-WhatIf` runs fully offline.** It does **not** call `Connect-MgGraph` and needs no tenant. It reads the CSV and `department-map.psd1`, resolves each planned action, and prints lines like:
-  `WOULD create user jdoe@contoso.com -> add to group "Attorneys-Users" -> license SPE_E5 flows via group-based licensing -> issue one-time Temporary Access Pass (valid 60 min)`.
+  `WOULD create user jdoe@contoso.com -> add to group "Attorneys-Users" -> license SPE_E5 flows via group-based licensing -> issue one-time Temporary Access Pass (valid 60 min) -> email TAP + first-sign-in instructions to jane.manager@contoso.com`.
 - **A real run** (no `-WhatIf`) connects cert-based and performs the mutations, each wrapped in `$PSCmdlet.ShouldProcess(...)`.
 - Consequence: the demo runs on **any** machine, needs **zero** tenant setup, and carries **zero** risk of creating stray users. This is itself a senior-engineer signal (a safe dry-run built before touching production identity).
 
@@ -102,10 +102,23 @@ New-MgUserAuthenticationTemporaryAccessPassMethod -UserId $upn -BodyParameter @{
 ```
 
 - The TAP is time-limited and single-use, so the new hire signs in once and is forced to register their own strong auth (MFA / passwordless). No shared or known password ever exists.
-- The TAP value is returned exactly once at creation and must reach the user **out-of-band** (typical: relayed by the hiring manager or IT). The script surfaces it to the operator for that handoff; it is never written to the log.
 - Requires the **Temporary Access Pass** authentication-method policy to be enabled in the tenant and the user in scope — noted in the script's comment-based help as a prerequisite.
 - A commented-out fallback block shows the "random password, forced change at first sign-in, relayed out-of-band" approach for tenants where TAP is not enabled — present to show the tradeoff, not as the default.
-- In offline `-WhatIf` mode the script issues nothing; it prints `WOULD issue a one-time Temporary Access Pass for <upn> (valid 60 min)`.
+
+**Delivery — email to the manager for in-person handoff.** A bootstrap credential can never be delivered through the account being created (the hire cannot sign in yet), so it must reach the hire through someone who already has a trusted channel. This tool emails each hire's TAP to their **manager** (a `Manager` column in the CSV — a mailbox that already exists), who hands it to the hire in person on day one. The TAP value, returned exactly once by Graph, is never written to the log or console — it goes only into the manager email.
+
+The manager email contains:
+- The new hire's name and work sign-in address (UPN).
+- The Temporary Access Pass and its expiry ("valid 60 minutes, one-time use").
+- **First sign-in instructions** the manager relays to the hire:
+  1. Go to `https://www.office.com` and choose **Sign in**.
+  2. Enter your work email (the UPN above).
+  3. When prompted for a password, choose **Use a Temporary Access Pass** and enter the code above.
+  4. Follow the prompts to set up the **Microsoft Authenticator** app — this becomes your permanent sign-in method.
+  5. The pass works once and expires in 60 minutes, so finish setup in one sitting. If it expires, ask IT to reissue.
+
+- **Documented fallback (option B):** if a hire has no manager, or for a general "what's the rule" answer, the script can instead return a structured onboarding handoff object (UPN, TAP, expiry) to the operator running it, who relays it per company policy. Noted in the README talking points so Marcus can pivot to it if asked.
+- In offline `-WhatIf` mode the script issues and sends nothing; it prints `WOULD issue a one-time Temporary Access Pass for <upn> and email it with first-sign-in instructions to <manager-upn>`.
 
 ---
 
@@ -113,7 +126,7 @@ New-MgUserAuthenticationTemporaryAccessPassMethod -UserId $upn -BodyParameter @{
 
 ### 4.1 `data/new-hires.csv`
 
-Columns: `First,Last,Department,JobTitle`. ~8–10 fake rows across the legal-firm departments below, deliberately including at least one **name collision** (two people who resolve to the same username) and one **blank/invalid row** so the collision-handling and per-row error-handling are visibly exercised in the `-WhatIf` output.
+Columns: `First,Last,Department,JobTitle,Manager` (Manager is the manager's UPN, the mailbox the TAP handoff email is sent to — see 3.6). ~8–10 fake rows across the legal-firm departments below, deliberately including at least one **name collision** (two people who resolve to the same username) and one **blank/invalid row** so the collision-handling and per-row error-handling are visibly exercised in the `-WhatIf` output.
 
 ### 4.2 `src/department-map.psd1`
 
@@ -171,7 +184,7 @@ The single live action on the call: with the finished script open, Marcus prompt
 - The old-vs-new weakness table (section 3.1).
 - A short "how the pieces relate" list (legacy → prompt → standards → result).
 - The exact `-WhatIf` command to run live, and the expected output shape.
-- Talking points: group-based licensing, cert-based auth, Temporary Access Pass (no password ever set), "written for a human reviewer," one-config-replaces-six.
+- Talking points: group-based licensing, cert-based auth, Temporary Access Pass (no password ever set) delivered to the manager for in-person handoff with first-sign-in instructions, the "bootstrapping trust is inherently out-of-band" point (with option B as the fallback framing), "written for a human reviewer," one-config-replaces-six.
 
 ---
 
