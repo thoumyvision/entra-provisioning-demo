@@ -17,7 +17,10 @@ Microsoft Entra instead. Build `src/New-EntraUsersFromCsv.ps1` to these requirem
   alternative, but do not use it.
 - **No password.** Issue a one-time Temporary Access Pass and email it, with first-sign-in
   instructions, to the hire's manager (a Manager column in the CSV) for in-person handoff.
-  Never write the pass to a log.
+  Never write the pass to a log. Align the pass to the hire's start date (a StartDate column
+  in the CSV): set its `startDateTime` to the onboarding day with a workday-length window,
+  not a short lifetime from run time - accounts are provisioned early and the email is
+  asynchronous, so a run-time countdown expires before the hire ever signs in.
 - **Collision-safe and idempotent.** First-initial + last name; if `jdoe` is taken, use `jdoe2`.
   Check the tenant on a real run; dedupe within the batch on a dry run.
 - **Safe by default.** `SupportsShouldProcess`; a full `-WhatIf` that connects to nothing,
