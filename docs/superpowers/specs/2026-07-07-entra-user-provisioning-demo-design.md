@@ -52,7 +52,7 @@ Demo/
 | Legacy weakness (`NewUsers.ps1`) | New behavior |
 |---|---|
 | `New-ADUser` (on-prem only) | `New-MgUser` via Microsoft Graph |
-| Hardcoded plaintext `"Summer2019!"` | Cryptographically random per-user password, never written to log or console; user flagged `ChangePasswordAtLogon` equivalent (force change on first sign-in) |
+| Hardcoded plaintext `"Summer2019!"` | **No password is set at all.** A one-time Temporary Access Pass (TAP) is issued per user (see 3.6); nothing secret is created, known, or logged |
 | No collision handling | Checks `Get-MgUser` for the candidate UPN first; on collision derives `jdoe2`, `jdoe3`, … |
 | One bad CSV row kills the whole loop | Per-row `try/catch`; failures collected into a results object and reported at the end; the run continues |
 | `substring(0,1)` crashes on blank first name | Each row's required fields validated before an identity is built; invalid rows are skipped with a clear reason |
@@ -69,12 +69,12 @@ Cert-based app-only against Microsoft Graph — Marcus's strongest technical-scr
 Connect-MgGraph -TenantId $TenantId -ClientId $ClientId -CertificateThumbprint $CertificateThumbprint
 ```
 
-Least-privilege scopes documented in comment-based help (`User.ReadWrite.All`, `Group.ReadWrite.All`) as the app-registration permissions the script assumes.
+Least-privilege scopes documented in comment-based help as the app-registration permissions the script assumes: `User.ReadWrite.All`, `Group.ReadWrite.All`, and `UserAuthenticationMethod.ReadWrite.All` (for issuing the Temporary Access Pass, see 3.6).
 
 ### 3.3 Execution model — offline `-WhatIf` (confirmed)
 
 - **`-WhatIf` runs fully offline.** It does **not** call `Connect-MgGraph` and needs no tenant. It reads the CSV and `department-map.psd1`, resolves each planned action, and prints lines like:
-  `WOULD create user jdoe@contoso.com -> add to group "Attorneys-Users" -> license SPE_E5 flows via group-based licensing`.
+  `WOULD create user jdoe@contoso.com -> add to group "Attorneys-Users" -> license SPE_E5 flows via group-based licensing -> issue one-time Temporary Access Pass (valid 60 min)`.
 - **A real run** (no `-WhatIf`) connects cert-based and performs the mutations, each wrapped in `$PSCmdlet.ShouldProcess(...)`.
 - Consequence: the demo runs on **any** machine, needs **zero** tenant setup, and carries **zero** risk of creating stray users. This is itself a senior-engineer signal (a safe dry-run built before touching production identity).
 
@@ -89,6 +89,23 @@ The script is generated under the human-readability standard (see section 5). Co
 - Full parameter names, no positional arguments.
 - Splatting for multi-parameter calls rather than backtick line-continuation.
 - A guiding comment before each logical block, narrating intent so a reviewer can follow the flow without executing it.
+
+### 3.6 First-time credential — Temporary Access Pass (no password)
+
+The script never sets a password. After the user and group membership are created, it issues a one-time **Temporary Access Pass** via Graph:
+
+```powershell
+New-MgUserAuthenticationTemporaryAccessPassMethod -UserId $upn -BodyParameter @{
+    isUsableOnce      = $true
+    lifetimeInMinutes = 60
+}
+```
+
+- The TAP is time-limited and single-use, so the new hire signs in once and is forced to register their own strong auth (MFA / passwordless). No shared or known password ever exists.
+- The TAP value is returned exactly once at creation and must reach the user **out-of-band** (typical: relayed by the hiring manager or IT). The script surfaces it to the operator for that handoff; it is never written to the log.
+- Requires the **Temporary Access Pass** authentication-method policy to be enabled in the tenant and the user in scope — noted in the script's comment-based help as a prerequisite.
+- A commented-out fallback block shows the "random password, forced change at first sign-in, relayed out-of-band" approach for tenants where TAP is not enabled — present to show the tradeoff, not as the default.
+- In offline `-WhatIf` mode the script issues nothing; it prints `WOULD issue a one-time Temporary Access Pass for <upn> (valid 60 min)`.
 
 ---
 
@@ -154,7 +171,7 @@ The single live action on the call: with the finished script open, Marcus prompt
 - The old-vs-new weakness table (section 3.1).
 - A short "how the pieces relate" list (legacy → prompt → standards → result).
 - The exact `-WhatIf` command to run live, and the expected output shape.
-- Talking points: group-based licensing, cert-based auth, "written for a human reviewer," one-config-replaces-six.
+- Talking points: group-based licensing, cert-based auth, Temporary Access Pass (no password ever set), "written for a human reviewer," one-config-replaces-six.
 
 ---
 
