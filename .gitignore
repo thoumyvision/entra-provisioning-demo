@@ -9,7 +9,7 @@ secrets.*
 # Outputs / per-machine
 outputs/
 *.log
-*.csv
+# NOTE: data/new-hires.csv is a tracked demo artifact, so *.csv is intentionally NOT ignored here.
 
 # OS / editor cruft
 Thumbs.db
