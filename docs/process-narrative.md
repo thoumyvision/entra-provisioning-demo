@@ -147,6 +147,14 @@ The spec (`docs/superpowers/specs/2026-07-07-entra-user-provisioning-demo-design
 in full detail. They were written and approved before any implementation code, which is its own
 small demonstration of the process.
 
+`standards/pwsh-standards.SKILL.md` is a point-in-time exhibit for the chain-of-evidence table
+above. The `.claude/skills/` folder is the live, functioning copy: open this repo in Claude Code
+and the same skills that gated the real build (`pwsh-standards`, plus the `using-superpowers`,
+`brainstorming`, `writing-plans`, `executing-plans`, and `subagent-driven-development` skills named
+in this repo's own `CLAUDE.md`) are active, with no dependency on Marcus's personal `~/.claude/`
+config. See `.claude/skills/THIRD-PARTY-NOTICES.md` for provenance and license on the five that
+come from the open-source Superpowers plugin.
+
 ---
 
 ## How to build it from here
