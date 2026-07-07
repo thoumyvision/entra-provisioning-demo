@@ -257,8 +257,14 @@ $isRealRun = -not $WhatIfPreference
 
 $plans = [System.Collections.Generic.List[object]]::new()
 foreach ($row in $validRows) {
-    $identity = Resolve-UniqueUsername -FirstName $row.First -LastName $row.Last -UpnSuffix $UpnSuffix `
-        -AssignedUsernames $assignedUsernames -CheckTenant:$isRealRun
+    $identityParams = @{
+        FirstName         = $row.First
+        LastName          = $row.Last
+        UpnSuffix         = $UpnSuffix
+        AssignedUsernames = $assignedUsernames
+        CheckTenant       = $isRealRun
+    }
+    $identity = Resolve-UniqueUsername @identityParams
 
     $mapping = $departmentMap[$row.Department]
 
@@ -292,8 +298,8 @@ foreach ($plan in $plans) {
 
     # Print the human-readable planned action for this hire. This prints on both dry and real runs
     # so the operator always sees exactly what will happen / happened, in one line.
-    Write-Log -Message ("PLAN {0}: create {1} | group {2} | license {3} (group-based) | TAP -> email {4}" -f `
-            $displayName, $plan.Upn, $plan.Group, $plan.License, $plan.Manager) -Level INFO
+    $planMessage = "PLAN {0}: create {1} | group {2} | license {3} (group-based) | TAP -> email {4}" -f $displayName, $plan.Upn, $plan.Group, $plan.License, $plan.Manager
+    Write-Log -Message $planMessage -Level INFO
 
     # ShouldProcess gates every real change. Under -WhatIf it returns $false and PowerShell prints
     # the standard "What if:" line, so nothing below runs and no Graph cmdlet is ever invoked.
@@ -310,9 +316,18 @@ foreach ($plan in $plans) {
             forceChangePasswordNextSignIn = $true
             password                      = ([System.Guid]::NewGuid().ToString('N') + '!Aa9')  # random, never used, never logged
         }
-        $newUser = New-MgUser -DisplayName $displayName -GivenName $plan.First -Surname $plan.Last `
-            -UserPrincipalName $plan.Upn -MailNickname $plan.Username -Department $plan.Department `
-            -JobTitle $plan.JobTitle -AccountEnabled -PasswordProfile $passwordProfile
+        $newUserParams = @{
+            DisplayName       = $displayName
+            GivenName         = $plan.First
+            Surname           = $plan.Last
+            UserPrincipalName = $plan.Upn
+            MailNickname      = $plan.Username
+            Department        = $plan.Department
+            JobTitle          = $plan.JobTitle
+            AccountEnabled    = $true
+            PasswordProfile   = $passwordProfile
+        }
+        $newUser = New-MgUser @newUserParams
 
         # 2) Add to the department group. License flows from GROUP-BASED LICENSING (assigned to the
         #    group in tenant config), so we do NOT assign a license per user here.
@@ -331,10 +346,21 @@ foreach ($plan in $plans) {
         #    The TAP value goes ONLY into this email - never to the log or console.
         #    Send-MailMessage is deprecated/obsolete in PS7; it stands in here for the org's
         #    approved mail-relay path in this demo (a real deployment would call that instead).
-        $emailBody = Get-FirstSignInEmailBody -HireDisplayName $displayName -HireUpn $plan.Upn `
-            -TemporaryAccessPass $tap.TemporaryAccessPass -LifetimeInMinutes $tapLifetimeMinutes
-        Send-MailMessage -To $plan.Manager -From $FromAddress -SmtpServer $SmtpServer `
-            -Subject "First-day sign-in details for $displayName" -Body $emailBody
+        $emailBodyParams = @{
+            HireDisplayName     = $displayName
+            HireUpn             = $plan.Upn
+            TemporaryAccessPass = $tap.TemporaryAccessPass
+            LifetimeInMinutes   = $tapLifetimeMinutes
+        }
+        $emailBody = Get-FirstSignInEmailBody @emailBodyParams
+        $mailParams = @{
+            To         = $plan.Manager
+            From       = $FromAddress
+            SmtpServer = $SmtpServer
+            Subject    = "First-day sign-in details for $displayName"
+            Body       = $emailBody
+        }
+        Send-MailMessage @mailParams
 
         Write-Log -Message ("Provisioned {0} and emailed sign-in details to {1}." -f $plan.Upn, $plan.Manager) -Level SUCCESS
         $results.Add([pscustomobject]@{ Upn = $plan.Upn; Status = 'Created' })
