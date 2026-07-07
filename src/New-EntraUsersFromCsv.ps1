@@ -112,6 +112,66 @@ function Write-Log {
         default   { Write-Host -Object $line -ForegroundColor Gray }
     }
 }
+
+function Resolve-UniqueUsername {
+    <#
+    .SYNOPSIS
+        Build a first-initial + last-name username that does not collide, and return it with its UPN.
+    .DESCRIPTION
+        Ensures uniqueness within this run using the AssignedUsernames set. On a real run,
+        pass -CheckTenant to also confirm the UPN is free in Entra via Get-MgUser.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $FirstName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $LastName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $UpnSuffix,
+
+        # AllowEmptyCollection: the set is legitimately empty on the first hire; a mandatory collection parameter otherwise rejects an empty collection at bind time.
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.HashSet[string]] $AssignedUsernames,
+
+        [Parameter(Mandatory = $false)]
+        [switch] $CheckTenant
+    )
+
+    # Base handle: first initial + last name, lowercased, with any non-alphanumeric stripped.
+    $baseHandle = ('{0}{1}' -f $FirstName.Substring(0, 1), $LastName).ToLower()
+    $baseHandle = $baseHandle -replace '[^a-z0-9]', ''
+
+    $candidate = $baseHandle
+    $suffixNumber = 1
+
+    # Walk jdoe -> jdoe2 -> jdoe3 ... until the handle is free both in this run and (optionally) the tenant.
+    while ($true) {
+        $candidateUpn = '{0}@{1}' -f $candidate, $UpnSuffix
+        $collides = $AssignedUsernames.Contains($candidate)
+
+        if (-not $collides -and $CheckTenant) {
+            $existingUser = Get-MgUser -Filter "userPrincipalName eq '$candidateUpn'" -ErrorAction SilentlyContinue
+            if ($existingUser) {
+                $collides = $true
+            }
+        }
+
+        if (-not $collides) {
+            [void] $AssignedUsernames.Add($candidate)
+            return [pscustomobject]@{
+                Username = $candidate
+                Upn      = $candidateUpn
+            }
+        }
+
+        $suffixNumber++
+        $candidate = '{0}{1}' -f $baseHandle, $suffixNumber
+    }
+}
 #endregion
 
 #region Main
@@ -148,4 +208,29 @@ foreach ($row in $allRows) {
 }
 
 Write-Log -Message ("{0} of {1} rows are valid and will be processed." -f $validRows.Count, $allRows.Count) -Level INFO
+
+# Build a concrete provisioning plan for every valid row. This resolves the username,
+# UPN, group, and license now so the plan can be printed (and reviewed) before anything changes.
+$assignedUsernames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$isRealRun = -not $WhatIfPreference
+
+$plans = [System.Collections.Generic.List[object]]::new()
+foreach ($row in $validRows) {
+    $identity = Resolve-UniqueUsername -FirstName $row.First -LastName $row.Last -UpnSuffix $UpnSuffix `
+        -AssignedUsernames $assignedUsernames -CheckTenant:$isRealRun
+
+    $mapping = $departmentMap[$row.Department]
+
+    $plans.Add([pscustomobject]@{
+        First      = $row.First
+        Last       = $row.Last
+        Department = $row.Department
+        JobTitle   = $row.JobTitle
+        Manager    = $row.Manager
+        Username   = $identity.Username
+        Upn        = $identity.Upn
+        Group      = $mapping.Group
+        License    = $mapping.License
+    })
+}
 #endregion
