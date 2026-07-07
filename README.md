@@ -34,17 +34,20 @@ pwsh -File src/New-EntraUsersFromCsv.ps1 -CsvPath data/new-hires.csv -WhatIf
 
 This prints the full plan and changes nothing. Watch for: the `jdoe` / `jdoe2` collision
 resolving, the blank row and the unmapped `Robotics` row being skipped with reasons, and the
-per-hire `PLAN ...` line ending in `TAP -> email <manager>`.
+per-hire `PLAN ...` line ending in `TAP valid <date> -> email <manager>`.
 
 ## Talking points
 
 - **Cert-based app-only auth** - no password, no automation tied to a person.
 - **Group-based licensing** - assign the user to a group, the license follows; deprovisioning is
   removing them from the group. `Set-MgUserLicense` is shown as the commented alternative.
-- **Temporary Access Pass** - the hire never gets a password. They get a single-use, 60-minute
-  pass, emailed to their manager for in-person handoff, with first-sign-in steps. Bootstrapping a
-  first credential is inherently out-of-band; if there is no manager, the fallback is a handoff
-  report to the operator.
+- **Temporary Access Pass** - the hire never gets a password. They get a single-use pass that
+  activates on the hire's start date and is valid for an ~8-hour window that day, emailed to
+  their manager for in-person handoff, with first-sign-in steps. Aligning validity to the start
+  date (instead of a short window from script-run time) matters because email is asynchronous
+  and accounts are often created days before onboarding. Bootstrapping a first credential is
+  inherently out-of-band; if there is no manager, the fallback is a handoff report to the
+  operator.
 - **Written for a human reviewer** - full command and parameter names, comments throughout,
   because I know someone is going to read it, not just run it.
 - **One config replaces six copies** - the department map is the whole difference between one

@@ -1,10 +1,10 @@
-First,Last,Department,JobTitle,Manager
-Jordan,Doe,Attorney,Associate Attorney,alan.pierce@contoso.com
-Jamie,Doe,Paralegal,Senior Paralegal,alan.pierce@contoso.com
-Priya,Kumar,IT,Systems Engineer,dana.wells@contoso.com
-Marcus,Lee,Finance,Staff Accountant,rosa.nunez@contoso.com
-Chen,Wu,Marketing,Marketing Specialist,rosa.nunez@contoso.com
-Aisha,Bello,HR,HR Generalist,dana.wells@contoso.com
-Tom,Riley,Legal Support,Records Clerk,alan.pierce@contoso.com
-,Nguyen,Attorney,Associate Attorney,alan.pierce@contoso.com
-Sam,Park,Robotics,Automation Lead,dana.wells@contoso.com
+First,Last,Department,JobTitle,Manager,StartDate
+Jordan,Doe,Attorney,Associate Attorney,alan.pierce@contoso.com,2026-07-13
+Jamie,Doe,Paralegal,Senior Paralegal,alan.pierce@contoso.com,2026-07-13
+Priya,Kumar,IT,Systems Engineer,dana.wells@contoso.com,2026-07-20
+Marcus,Lee,Finance,Staff Accountant,rosa.nunez@contoso.com,2026-07-13
+Chen,Wu,Marketing,Marketing Specialist,rosa.nunez@contoso.com,2026-07-20
+Aisha,Bello,HR,HR Generalist,dana.wells@contoso.com,2026-07-13
+Tom,Riley,Legal Support,Records Clerk,alan.pierce@contoso.com,2026-07-27
+,Nguyen,Attorney,Associate Attorney,alan.pierce@contoso.com,2026-07-13
+Sam,Park,Robotics,Automation Lead,dana.wells@contoso.com,2026-07-13

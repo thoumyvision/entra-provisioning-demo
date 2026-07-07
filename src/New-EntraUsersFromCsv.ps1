@@ -17,7 +17,7 @@
     connecting to any tenant or changing anything (the dry run needs no Graph module installed).
 
 .PARAMETER CsvPath
-    Path to the new-hire CSV. Required. Columns: First,Last,Department,JobTitle,Manager.
+    Path to the new-hire CSV. Required. Columns: First,Last,Department,JobTitle,Manager,StartDate.
 
 .PARAMETER MapPath
     Path to the department-map.psd1 config. Defaults to department-map.psd1 beside this script.
@@ -51,6 +51,10 @@
                      registration with User.ReadWrite.All, Group.ReadWrite.All,
                      UserAuthenticationMethod.ReadWrite.All, and the Temporary Access Pass
                      authentication-method policy enabled for the target users.
+    TAP Activation : The Temporary Access Pass activates on the hire's StartDate for about
+                     8 hours (not at script-run time), since accounts are often created days
+                     before onboarding. The lifetime must fall within the tenant's TAP
+                     authentication-method policy max lifetime.
     Last Modified  : 2026-07-07
 #>
 
@@ -190,15 +194,24 @@ function Get-FirstSignInEmailBody {
         [string] $TemporaryAccessPass,
 
         [Parameter(Mandatory = $true)]
-        [int] $LifetimeInMinutes
+        [int] $LifetimeInMinutes,
+
+        [Parameter(Mandatory = $true)]
+        [datetime] $ValidFromDate
     )
+
+    # The pass activates on the hire's start date, not at script-run time, so express the
+    # window as "active on <date> for about N hours" rather than a countdown from now.
+    $hours = [int]($LifetimeInMinutes / 60)
 
     # Plain-text body. The manager hands this to the new hire in person on day one.
     return @"
 A new account is ready for $HireDisplayName.
 
-Please give the new hire their one-time sign-in pass in person. It expires in
-$LifetimeInMinutes minutes and works only once.
+Please give the new hire their one-time sign-in pass in person on their start date.
+
+Your one-time sign-in pass becomes active on $($ValidFromDate.ToString('dddd, MMMM d, yyyy'))
+and is valid for about $hours hours that day. It works only once.
 
   Work sign-in address : $HireUpn
   Temporary Access Pass: $TemporaryAccessPass
@@ -209,8 +222,8 @@ First sign-in steps (for the new hire):
   3. When asked for a password, choose "Use a Temporary Access Pass" and enter the code above.
   4. Follow the prompts to set up the Microsoft Authenticator app - this becomes your
      permanent sign-in method.
-  5. The pass works once and expires in $LifetimeInMinutes minutes, so finish setup in one
-     sitting. If it expires, contact IT for a new one.
+  5. The pass works once and is valid for about $hours hours on the start date above, so
+     finish setup in one sitting. If it expires, contact IT for a new one.
 "@
 }
 #endregion
@@ -245,6 +258,14 @@ foreach ($row in $allRows) {
         continue
     }
 
+    # The Temporary Access Pass activation depends on a real, parseable StartDate, so a
+    # blank or malformed date must skip the row rather than fail later when building the TAP.
+    $parsedStartDate = [datetime]::MinValue
+    if (-not [datetime]::TryParse($row.StartDate, [ref] $parsedStartDate)) {
+        Write-Log -Message ("Row {0}: SKIPPED (StartDate '{1}' is missing or not a valid date)." -f $rowNumber, $row.StartDate) -Level WARNING
+        continue
+    }
+
     $validRows.Add($row)
 }
 
@@ -268,6 +289,10 @@ foreach ($row in $validRows) {
 
     $mapping = $departmentMap[$row.Department]
 
+    # Treat 08:00 on the start date as UTC so the PLAN line, the manager email, and the Graph
+    # startDateTime always agree on the calendar day regardless of the host machine's timezone.
+    $startActivation = [datetime]::SpecifyKind(([datetime]::Parse($row.StartDate)).Date.AddHours(8), [System.DateTimeKind]::Utc)
+
     $plans.Add([pscustomobject]@{
         First      = $row.First
         Last       = $row.Last
@@ -278,6 +303,7 @@ foreach ($row in $validRows) {
         Upn        = $identity.Upn
         Group      = $mapping.Group
         License    = $mapping.License
+        StartDate  = $startActivation
     })
 }
 
@@ -290,15 +316,15 @@ if ($isRealRun -and $plans.Count -gt 0) {
     Write-Log -Message "Connected to Microsoft Graph (app-only, certificate)." -Level SUCCESS
 }
 
-$tapLifetimeMinutes = 60
+$tapLifetimeMinutes = 480   # 8-hour window on the start date; must be within the tenant TAP policy max lifetime
 $results = [System.Collections.Generic.List[object]]::new()
 
 foreach ($plan in $plans) {
     $displayName = '{0} {1}' -f $plan.First, $plan.Last
 
-    # Print the human-readable planned action for this hire. This prints on both dry and real runs
-    # so the operator always sees exactly what will happen / happened, in one line.
-    $planMessage = "PLAN {0}: create {1} | group {2} | license {3} (group-based) | TAP -> email {4}" -f $displayName, $plan.Upn, $plan.Group, $plan.License, $plan.Manager
+    # Print the human-readable planned action for this hire, including the TAP activation date, so
+    # the dry run visibly shows the pass aligned to the hire's start date rather than run time.
+    $planMessage = "PLAN {0}: create {1} | group {2} | license {3} (group-based) | TAP valid {4:yyyy-MM-dd} -> email {5}" -f $displayName, $plan.Upn, $plan.Group, $plan.License, $plan.StartDate, $plan.Manager
     Write-Log -Message $planMessage -Level INFO
 
     # ShouldProcess gates every real change. Under -WhatIf it returns $false and PowerShell prints
@@ -336,9 +362,11 @@ foreach ($plan in $plans) {
         $group = Get-MgGroup -Filter "displayName eq '$($plan.Group)'" -ErrorAction Stop
         New-MgGroupMember -GroupId $group.Id -DirectoryObjectId $newUser.Id
 
-        # 3) Issue a one-time Temporary Access Pass. Its value is returned exactly once, right here.
+        # 3) Issue a one-time TAP that becomes valid at the start of the hire's onboarding day (startDateTime),
+        #    not at script-run time - accounts are often created days early and the manager reads the email async.
         $tap = New-MgUserAuthenticationTemporaryAccessPassMethod -UserId $newUser.Id -BodyParameter @{
             isUsableOnce      = $true
+            startDateTime     = $plan.StartDate.ToString('yyyy-MM-ddTHH:mm:ssZ')
             lifetimeInMinutes = $tapLifetimeMinutes
         }
 
@@ -351,6 +379,7 @@ foreach ($plan in $plans) {
             HireUpn             = $plan.Upn
             TemporaryAccessPass = $tap.TemporaryAccessPass
             LifetimeInMinutes   = $tapLifetimeMinutes
+            ValidFromDate       = $plan.StartDate
         }
         $emailBody = Get-FirstSignInEmailBody @emailBodyParams
         $mailParams = @{
