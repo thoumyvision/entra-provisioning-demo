@@ -13,12 +13,9 @@ architecture, the standards, and every consequential decision were human.
 
 ## The situation
 
-Second-round interview for an Enterprise Applications Automation Engineer role. In the first
-round, the hiring manager was skeptical of AI-assisted work. That skepticism is fair, and arguing
-with it would be the wrong move. The right move is to show what disciplined AI-assisted
-engineering actually looks like, so the skepticism has nowhere to land.
-
-So the demo is a deliberate before/after:
+This demo was built for a second-round conversation about an Enterprise Applications Automation
+Engineer role. It is a deliberate before/after, meant to make the engineering judgment visible
+rather than describe it:
 
 - **Before:** `legacy/NewUsers.ps1`, a real script written in 2019 to create Active Directory
   accounts from a CSV. It works. It also has a hardcoded plaintext password, no collision
@@ -39,19 +36,18 @@ on display.
 
 ### 1. A hybrid demo, not a live free-for-all
 
-Three options were on the table: build the whole thing live on the call, pre-build it and walk
-through it, or a hybrid. The hybrid won: pre-build the full artifact as a guaranteed fallback,
-then do one small, contained live change (adding a field from a new CSV column) so the
-interviewer sees real-time direction without betting a thirty-minute interview on live tooling
-behaving. Payoff of a live demo, without the failure mode.
+Three options were on the table: build the whole thing live, pre-build it and walk through it, or
+a hybrid. The hybrid won: pre-build the full artifact, then do one small, contained live change
+(adding a field from a new CSV column) to show real-time direction without depending on live
+tooling behaving in a short session. Payoff of a live demo, without the failure mode.
 
 ### 2. Pivot from on-prem AD to Microsoft Entra / Graph
 
 The 2019 script uses `New-ADUser`. The modern version uses `New-MgUser` over Microsoft Graph.
 This was deliberate on two fronts. It turns a cleanup story into a *modernization* story, which is
 a stronger thing to show. And it maps directly onto the target environment (Graph, Entra, M365,
-licensing) and onto the two technical-screen answers that landed best in round one: Microsoft
-Graph and certificate-based authentication.
+licensing) and onto the core technologies the role centers on: Microsoft Graph and
+certificate-based authentication.
 
 ### 3. The chain of evidence: prompt + standards, both in the repo
 
@@ -62,8 +58,8 @@ sit in the repo alongside the code:
   cert-based auth, config-driven, group-based licensing, idempotent, `-WhatIf`, and "follow my
   pwsh-standards skill."
 - `standards/pwsh-standards.SKILL.md`, the codified PowerShell standards the AI was told to
-  follow. This is the load-bearing artifact for a skeptic. It proves the quality is a repeatable
-  standard the engineer defined, not something the machine guessed at.
+  follow. This is the load-bearing artifact: it shows the quality is a repeatable standard the
+  engineer defined, not something the machine guessed at.
 
 ### 4. Written for a human reviewer
 
@@ -120,7 +116,7 @@ Then the review earned its keep. It flagged that the activation timestamp was be
 explicit time zone, so on a host east of UTC+8 the pass would activate a calendar day earlier than
 the date shown to the manager, a quiet, geography-dependent bug of the kind that ships when nobody
 is looking. Pinning the instant to UTC closed it. The point is not that the first cut had a bug; it
-is that a disciplined process expects one and goes looking before the interviewer does.
+is that a disciplined process expects one and goes looking for it.
 
 ### 8. Offline `-WhatIf`: zero setup, zero risk
 
