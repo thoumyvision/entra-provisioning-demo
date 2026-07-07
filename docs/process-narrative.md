@@ -65,9 +65,9 @@ sit in the repo alongside the code:
 
 An explicit requirement, and arguably the most important one: the generated script must be
 optimized for a human reading it, not just a machine running it. Full cmdlet and parameter names,
-no aliases, splatting over line-continuation, a guiding comment before each block. If the reviewer
-can read it top to bottom and follow it, the "AI writes junk" prior has nowhere to go. This became
-a new section in the standards skill.
+no aliases, splatting over line-continuation, a guiding comment before each block. A reviewer
+should be able to read it top to bottom and trust it without running it. This became a new section
+in the standards skill.
 
 ### 5. Group-based licensing
 
