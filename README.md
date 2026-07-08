@@ -3,6 +3,10 @@
 A before/after that shows how directing an AI with codified standards produces automation that
 is faster to build and cleaner than what I wrote by hand years ago.
 
+**Guided walkthrough:** [whitmanhm.org/demo](https://whitmanhm.org/demo/) walks this repo
+section by section - the annotated 2019 script, the prompt, the eight design decisions, and a
+replay of the dry run.
+
 ## The chain of evidence
 
 1. `legacy/NewUsers.ps1` - a real script I wrote in 2019, verbatim except the client domains,
