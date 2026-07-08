@@ -12,6 +12,12 @@ Skills under `.claude/skills/` in this repo come from two sources:
   build, but directly relevant: `src/New-EntraUsersFromCsv.ps1` is a Microsoft Graph script
   end to end (cert-based `Connect-MgGraph`, `New-MgUser`, group membership, Temporary Access Pass).
 
+Publication note: organization-specific identifiers in these two original skills - Key Vault and
+app registration names, one app client ID, a SharePoint tenant hostname, and internal group,
+account, and project names - have been fictionalized for this public repo (Microsoft's
+Contoso/Fabrikam naming convention). The technical content is otherwise exactly what runs
+privately.
+
 ## Vendored from Superpowers (MIT License, Copyright (c) 2025 Jesse Vincent)
 
 - `using-superpowers/`
