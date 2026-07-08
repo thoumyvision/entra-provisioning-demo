@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the employer 2nd-interview screenshare demo: a legacy on-prem `NewUsers.ps1` beside a modern, config-driven Microsoft Graph provisioning script, plus the crafted prompt and pwsh-standards skill that produced it.
+**Goal:** Build the second-round-interview screenshare demo: a legacy on-prem `NewUsers.ps1` beside a modern, config-driven Microsoft Graph provisioning script, plus the crafted prompt and pwsh-standards skill that produced it.
 
 **Architecture:** One PowerShell script (`New-EntraUsersFromCsv.ps1`) reads a CSV of new hires and a `department-map.psd1` config, builds collision-safe identities, and — in a real run — creates Entra users via Graph, adds them to their department's M365 group (license flows via group-based licensing), issues a one-time Temporary Access Pass, and emails it to each hire's manager with first-sign-in instructions. All mutations are wrapped in `ShouldProcess`; the demo runs in offline `-WhatIf`, which needs no tenant, no Graph module, and prints the intended plan.
 

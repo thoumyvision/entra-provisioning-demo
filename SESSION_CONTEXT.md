@@ -1,11 +1,11 @@
 # SESSION_CONTEXT - Entra User-Provisioning Demo
 
-Resume context for `C:\Projects\Demo` (origin: `github.com/thoumyvision/Demo`). Last updated
-2026-07-07.
+Resume context for `C:\Projects\Demo` (origin: `github.com/thoumyvision/entra-provisioning-demo`).
+Last updated 2026-07-07.
 
 ## Status: complete and pushed
 
-All planned work is done, reviewed, and on `main` (in sync with `origin/main`, HEAD `163fa5a`).
+All planned work is done, reviewed, and on `main` (in sync with `origin/main`).
 The demo runs offline and is ready to present. Nothing is mid-flight.
 
 ## What this repo is
@@ -22,7 +22,7 @@ Read `AGENTS.md` and `docs/process-narrative.md` first on resume.
 
 | Path | What it is |
 |------|------------|
-| `legacy/NewUsers.ps1` | The 2019 original (verbatim, flaws intact). |
+| `legacy/NewUsers.ps1` | The 2019 original (verbatim except fictionalized client domains; flaws intact). |
 | `src/New-EntraUsersFromCsv.ps1` | The modern Entra/Graph script. |
 | `src/department-map.psd1` | Department -> M365 group + license SKU config. |
 | `data/new-hires.csv` | Fake test data (deliberate collision, blank row, unmapped dept, StartDate column). |
@@ -73,8 +73,7 @@ behavior + PSScriptAnalyzer, not Pester (demo artifact).
   CSV column; the TAP now sets `startDateTime` to the onboarding day (08:00, pinned to UTC) with
   an 8-hour window, bounded by the tenant TAP policy. The review caught a timezone bug
   (`Kind=Unspecified` + `.ToUniversalTime()` could roll the day back on UTC+9/+10/+12 hosts);
-  fixed with `SpecifyKind(...Utc)`. Prompt and README updated to match. See memory
-  [[tap-align-to-start-date]].
+  fixed with `SpecifyKind(...Utc)`. Prompt and README updated to match.
 - **Process narrative scrubbed** of interviewer-facing commentary (skepticism read, "landed best
   in round one", "AI writes junk" prior, etc.) since the narrative is read by the interviewer.
 
@@ -83,14 +82,11 @@ behavior + PSScriptAnalyzer, not Pester (demo artifact).
 - **Optional wording tweak (Marcus's call):** `docs/process-narrative.md` line ~27, "The gap
   between those two files is the argument." Offered to soften "argument" -> "point"; left as-is
   pending decision.
-- **Pending `/claude-sync`:** the global `~/.claude/skills/pwsh-standards/` edits (5 new sections
-  + `$ARGUMENTS`/em-dash cleanup) and the `~/.claude/skills/claude-sync/SKILL.md` edit adding this
-  repo are made but uncommitted in the `claude-config` repo. Push them on the next evening sync.
 
 ## Notes
 
 - Commit trailer for this repo (matches its existing history):
   `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` +
   `Claude-Session: https://claude.ai/code/session_01V6295VZRdgZjm4kSxApQ87`.
-- ASCII only in scripts and Markdown; scripts UTF-8 no BOM (except `legacy/NewUsers.ps1`, a
-  verbatim copy that retains its original BOM).
+- ASCII only in scripts and Markdown; scripts UTF-8 no BOM (except `legacy/NewUsers.ps1`, which
+  retains its original BOM; verbatim except fictionalized client domains).

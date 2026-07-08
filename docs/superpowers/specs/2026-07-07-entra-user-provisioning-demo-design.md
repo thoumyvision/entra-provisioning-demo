@@ -3,7 +3,7 @@
 **Date:** 2026-07-07
 **Author:** Marcus Whitman (with Claude Opus 4.8)
 **Repo:** `C:\Projects\Demo` → `thoumyvision/Demo` (private)
-**Purpose:** A screenshare demo for the employer 2nd interview (Enterprise Applications Automation Engineer) that turns "skeptical of AI use" into a strength by showing that AI output quality is a function of the engineer directing it.
+**Purpose:** A screenshare demo for a second-round interview for an Enterprise Applications Automation Engineer role that turns "skeptical of AI use" into a strength by showing that AI output quality is a function of the engineer directing it.
 
 ---
 
@@ -18,7 +18,7 @@ The hiring manager was skeptical of AI. The demo's job is to reframe that skepti
 
 The message: *"I'm not outsourcing judgment to the AI. I codified what good looks like, I front-load the architecture into the prompt, and the AI scales my standards consistently. And I can spot when it's wrong."*
 
-Secondary win: the pivot from on-prem `New-ADUser` to Graph `New-MgUser` is a **modernization story** that maps directly onto the employer stack (Graph, Entra, M365, licensing) and onto Marcus's two strongest technical-screen answers (Microsoft Graph, cert-based auth). It also quietly closes his two screen gaps by demonstrating adjacent competence.
+Secondary win: the pivot from on-prem `New-ADUser` to Graph `New-MgUser` is a **modernization story** that maps directly onto the role's stack (Graph, Entra, M365, licensing) and onto Marcus's two strongest technical-screen answers (Microsoft Graph, cert-based auth). It also quietly closes his two screen gaps by demonstrating adjacent competence.
 
 ---
 

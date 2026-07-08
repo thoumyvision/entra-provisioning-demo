@@ -6,8 +6,11 @@ secrets.*
 *.pfx
 *.pem
 
-# Outputs / per-machine
-outputs/
+# Outputs / per-machine - keep plain-text deliverables (.md/.html), ignore everything else
+outputs/*
+!outputs/*.md
+!outputs/*.html
+!outputs/*/
 *.log
 # NOTE: data/new-hires.csv is a tracked demo artifact, so *.csv is intentionally NOT ignored here.
 

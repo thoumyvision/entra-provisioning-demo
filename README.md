@@ -5,7 +5,8 @@ is faster to build and cleaner than what I wrote by hand years ago.
 
 ## The chain of evidence
 
-1. `legacy/NewUsers.ps1` - a real script I wrote in 2019. It works, but: a hardcoded plaintext
+1. `legacy/NewUsers.ps1` - a real script I wrote in 2019, verbatim except the client domains,
+   which have been fictionalized. It works, but: a hardcoded plaintext
    password, no collision handling, no error handling, one bad row kills the run, and I kept six
    hand-edited copies (one per client).
 2. `prompt/prompt.md` - the prompt I gave the AI. The judgment is front-loaded here.
