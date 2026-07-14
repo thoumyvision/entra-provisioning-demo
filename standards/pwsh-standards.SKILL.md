@@ -171,7 +171,7 @@ param(
 
 ## Written for a Human Reviewer
 
-Scripts are read more than they are run, and a reviewer who cannot follow a script will not trust it. Optimize generated PowerShell for a human reading it top to bottom:
+Scripts run unattended far more often than a human reads them, but a reviewer who cannot follow the script will not trust it, and an untrusted script does not get approved. Optimize generated PowerShell for a human reading it top to bottom:
 
 - **No aliases.** Use `Where-Object` not `?`, `ForEach-Object` not `%`, `Get-ChildItem` not `gci`/`ls`/`dir`, `Select-Object` not `select`. Aliases are for the interactive prompt, never for saved scripts.
 - **Full parameter names, no positional arguments.** Write `Get-MgUser -UserId $upn`, not `Get-MgUser $upn`. The reader should never have to remember positional order.
