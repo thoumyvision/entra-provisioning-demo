@@ -1,7 +1,12 @@
 # AGENTS.md — Demo Repository
 
-Cross-agent baseline for any AI coding agent working in this repo. Tool-specific extensions live
-in [CLAUDE.md](CLAUDE.md), which imports this file so the substance stays in one place.
+Cross-agent baseline for any AI coding agent working in this repo. Tool-specific extensions layer
+on top:
+
+- **Claude Code (primary)** — see [CLAUDE.md](CLAUDE.md) (imports this file)
+- **Grok Build (backup)** — same harness via Claude compatibility; follow this file plus the
+  [Grok Build section](#grok-build-claude-harness-backup) below
+- **Other agents** — read this file as primary; open skill `SKILL.md` files when a request matches
 
 ## Purpose
 
@@ -51,5 +56,52 @@ Read these before working in the repo:
 
 ## Deliverable Attribution
 
-Written deliverables in this repo carry a "Built with Claude (Opus 4.8)" byline. Being open about
-AI use is part of what this demo is arguing for.
+Written deliverables carry a byline naming the **active agent**. Being open about AI use is part
+of what this demo is arguing for.
+
+- Claude Code → "Built with Claude (Opus 4.8)" or the current Claude model
+- Grok Build → "Built with Grok [model]" (e.g. Grok Build)
+
+Commit trailers: use the harness-provided `Co-Authored-By` / session link for the agent that
+produced the commit. Do not claim Claude authorship for Grok-produced work, or the reverse.
+
+## Path-scoped rules (`.claude/rules/`)
+
+Repo-local mirrors so Grok Build auto-loads them:
+
+| File | Applies when |
+|------|----------------|
+| `powershell.md` | `*.ps1` |
+| `scripts.md` | Scripts under `scripts/` / `src/` or `*.ps1` / `*.py` |
+| `cli-tools.md` | Document conversion and CLI tools |
+
+Also follow the vendored `pwsh-standards` skill under `.claude/skills/pwsh-standards/` (and
+`standards/pwsh-standards.SKILL.md` for the demo narrative).
+
+## Grok Build (Claude harness backup)
+
+Marcus's primary agent is Claude Code. When Claude usage is exhausted, **Grok Build is the
+backup** and should reuse this harness.
+
+### What Grok already auto-loads
+
+| Surface | Paths |
+|---------|-------|
+| Project instructions | `AGENTS.md`, `CLAUDE.md` |
+| Global behavior | `~/.claude/Claude.md` |
+| Repo skills | `.claude/skills/*/SKILL.md` (pwsh-standards, graph-api, superpowers plan skills, …) |
+| Global skills | `~/.claude/skills/*/SKILL.md` |
+| Path rules | `.claude/rules/*.md` (repo mirror) |
+
+Confirm with `grok inspect` after config changes.
+
+### Operating rules for Grok sessions
+
+1. **Read the design docs first** — `docs/process-narrative.md`, approved spec, and plan under
+   `docs/superpowers/`.
+2. **Skills first** — `pwsh-standards` for all PowerShell; plan/execute skills when implementing
+   the task plan.
+3. **Verify** — offline `-WhatIf` plus PSScriptAnalyzer before calling done.
+4. **ASCII only** in scripts and Markdown.
+5. **Handoff** — leave plan progress notes; optional `/resume-claude`.
+6. **Do not duplicate into `.grok/`** — keep skills under `.claude/`.
