@@ -10,8 +10,8 @@
       - creates the user in Entra via Microsoft Graph,
       - adds the user to their department's M365 group (license flows via GROUP-BASED licensing),
       - issues a one-time Temporary Access Pass (no password is ever set),
-      - emails the Temporary Access Pass and first-sign-in instructions to the hire's manager
-        for in-person handoff.
+      - writes the Temporary Access Pass to a per-hire Azure Key Vault secret and emails the
+        manager a pointer to it and first-sign-in instructions - never the pass itself.
 
     All changes are wrapped in ShouldProcess. Run with -WhatIf to see the full plan without
     connecting to any tenant or changing anything (the dry run needs no Graph module installed).
@@ -34,6 +34,10 @@
 .PARAMETER CertificateThumbprint
     Thumbprint of the client certificate for app-only auth. Required for a real run.
 
+.PARAMETER KeyVaultName
+    Name of the Azure Key Vault that receives each hire's Temporary Access Pass secret.
+    Required for a real run.
+
 .PARAMETER FromAddress
     Sender address for the manager handoff email. Required for a real run.
 
@@ -47,15 +51,23 @@
 .NOTES
     File Name      : New-EntraUsersFromCsv.ps1
     Author         : Marcus Whitman
-    Prerequisite   : PowerShell 7+. Real run also needs Microsoft.Graph modules, an app
-                     registration with User.ReadWrite.All, Group.ReadWrite.All,
-                     UserAuthenticationMethod.ReadWrite.All, and the Temporary Access Pass
-                     authentication-method policy enabled for the target users.
+    Prerequisite   : PowerShell 7+. Real run also needs Microsoft.Graph modules, Az.Accounts,
+                     and Az.KeyVault; an app registration with User.ReadWrite.All,
+                     Group.ReadWrite.All, UserAuthenticationMethod.ReadWrite.All, and Key Vault
+                     Secrets Officer at the target vault; the Temporary Access Pass
+                     authentication-method policy enabled for the target users; and a
+                     Managers/Onboarding security group holding Key Vault Secrets User at the
+                     vault so managers can retrieve secrets (this script does not grant that
+                     role - it is tenant config, provisioned the same way as the TAP policy and
+                     the department groups).
     TAP Activation : The Temporary Access Pass activates on the hire's StartDate for about
                      8 hours (not at script-run time), since accounts are often created days
                      before onboarding. The lifetime must fall within the tenant's TAP
                      authentication-method policy max lifetime.
-    Last Modified  : 2026-07-07
+    KV Window      : The Key Vault secret's readable window (NotBefore/Expires) mirrors the
+                     TAP's own activation window exactly, so it cannot be retrieved before the
+                     TAP itself would even work.
+    Last Modified  : 2026-07-16
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -78,6 +90,9 @@ param(
 
     [Parameter(Mandatory = $false)]
     [string] $CertificateThumbprint,
+
+    [Parameter(Mandatory = $false)]
+    [string] $KeyVaultName,
 
     [Parameter(Mandatory = $false)]
     [string] $FromAddress,
@@ -314,6 +329,18 @@ if ($isRealRun -and $plans.Count -gt 0) {
     Import-Module -Name Microsoft.Graph.Authentication, Microsoft.Graph.Users, Microsoft.Graph.Groups, Microsoft.Graph.Identity.SignIns
     Connect-MgGraph -TenantId $TenantId -ClientId $ClientId -CertificateThumbprint $CertificateThumbprint -NoWelcome
     Write-Log -Message "Connected to Microsoft Graph (app-only, certificate)." -Level SUCCESS
+
+    # Key Vault is a separate data plane from Graph, so it needs its own connection - the same
+    # app registration and certificate, no new credential type introduced.
+    Import-Module -Name Az.Accounts, Az.KeyVault
+    $azConnectParams = @{
+        ServicePrincipal      = $true
+        Tenant                = $TenantId
+        ApplicationId         = $ClientId
+        CertificateThumbprint = $CertificateThumbprint
+    }
+    Connect-AzAccount @azConnectParams | Out-Null
+    Write-Log -Message "Connected to Azure Key Vault (app-only, certificate)." -Level SUCCESS
 }
 
 $tapLifetimeMinutes = 480   # 8-hour window on the start date; must be within the tenant TAP policy max lifetime
