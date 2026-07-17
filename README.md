@@ -13,7 +13,7 @@ is faster to build and cleaner than what I wrote by hand years ago.
 Skills and path rules live under `.claude/`; do not maintain a parallel tree under `.grok/`.
 
 **Guided walkthrough:** [whitmanhm.org/demo](https://whitmanhm.org/demo/) walks this repo
-section by section - the annotated 2019 script, the prompt, the eight design decisions, and a
+section by section - the annotated 2019 script, the prompt, the nine design decisions, and a
 replay of the dry run.
 
 ## The chain of evidence
