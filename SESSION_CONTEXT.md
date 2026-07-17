@@ -1,7 +1,7 @@
 # SESSION_CONTEXT - Entra User-Provisioning Demo
 
 Resume context for `C:\Projects\Demo` (origin: `github.com/thoumyvision/entra-provisioning-demo`).
-Last updated 2026-07-07.
+Last updated 2026-07-16.
 
 ## Status: complete and pushed
 
@@ -39,8 +39,9 @@ pwsh -NoProfile -File src/New-EntraUsersFromCsv.ps1 -CsvPath data/new-hires.csv 
 ```
 
 Expected: 7 `PLAN` lines, `jdoe` -> `jdoe2` collision resolved, the blank-First row and the
-unmapped `Robotics` row skipped with reasons, each PLAN line ending `TAP valid <date> -> email
-<manager>`, a 7-row `Planned (WhatIf)` summary, and no `Connect-MgGraph`. Lint gate:
+unmapped `Robotics` row skipped with reasons, each PLAN line ending `TAP -> Key Vault secret
+'<name>' (readable <date>) -> notify <manager>`, a 7-row `Planned (WhatIf)` summary, and no
+`Connect-MgGraph` or `Connect-AzAccount`. Lint gate:
 
 ```powershell
 pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Path src/New-EntraUsersFromCsv.ps1 -Settings PSGallery"
@@ -74,6 +75,15 @@ behavior + PSScriptAnalyzer, not Pester (demo artifact).
   an 8-hour window, bounded by the tenant TAP policy. The review caught a timezone bug
   (`Kind=Unspecified` + `.ToUniversalTime()` could roll the day back on UTC+9/+10/+12 hosts);
   fixed with `SpecifyKind(...Utc)`. Prompt and README updated to match.
+- **TAP delivery moved from email to Key Vault pull** (interview-follow-up-directed): the pass is
+  now written to a per-hire Key Vault secret (`TAP-<username>`) whose NotBefore/Expires mirror the
+  TAP's own start-date activation window; the manager email carries only a pointer (vault name,
+  secret name, retrieval command), never the value. Considered and rejected eliminating the TAP
+  itself (Verified ID/Face Check only strengthens proofing before a TAP is issued; the only
+  genuinely TAP-free path needs pre-shipped FIDO2 hardware, a different onboarding model) and
+  script-managed per-secret RBAC (too much added attack surface for this demo). See
+  `docs/superpowers/specs/2026-07-16-tap-keyvault-delivery-design.md` and
+  `docs/superpowers/plans/2026-07-16-tap-keyvault-delivery.md`.
 - **Process narrative scrubbed** of interviewer-facing commentary (skepticism read, "landed best
   in round one", "AI writes junk" prior, etc.) since the narrative is read by the interviewer.
 

@@ -48,20 +48,32 @@ pwsh -File src/New-EntraUsersFromCsv.ps1 -CsvPath data/new-hires.csv -WhatIf
 
 This prints the full plan and changes nothing. Watch for: the `jdoe` / `jdoe2` collision
 resolving, the blank row and the unmapped `Robotics` row being skipped with reasons, and the
-per-hire `PLAN ...` line ending in `TAP valid <date> -> email <manager>`.
+per-hire `PLAN ...` line ending in `TAP -> Key Vault secret '<name>' (readable <date>) ->
+notify <manager>`.
+
+## Prerequisites for a real (non `-WhatIf`) run
+
+- Microsoft.Graph sub-modules (as before), plus `Az.Accounts` and `Az.KeyVault`.
+- The app registration needs `Key Vault Secrets Officer` at the target vault (to write TAP
+  secrets), in addition to its existing Graph permissions.
+- A Managers/Onboarding security group needs `Key Vault Secrets User` at the vault, so managers
+  can retrieve secrets. This script does not grant that role - it is tenant config, provisioned
+  the same way as the TAP policy and the department groups.
 
 ## Talking points
 
 - **Cert-based app-only auth** - no password, no automation tied to a person.
 - **Group-based licensing** - assign the user to a group, the license follows; deprovisioning is
   removing them from the group. `Set-MgUserLicense` is shown as the commented alternative.
-- **Temporary Access Pass** - the hire never gets a password. They get a single-use pass that
-  activates on the hire's start date and is valid for an ~8-hour window that day, emailed to
-  their manager for in-person handoff, with first-sign-in steps. Aligning validity to the start
-  date (instead of a short window from script-run time) matters because email is asynchronous
-  and accounts are often created days before onboarding. Bootstrapping a first credential is
-  inherently out-of-band; if there is no manager, the fallback is a handoff report to the
-  operator.
+- **Temporary Access Pass, delivered through Key Vault, not email** - the hire never gets a
+  password. They get a single-use pass that activates on the hire's start date, written to a
+  per-hire Key Vault secret whose readable window mirrors the pass's own ~8-hour window that day.
+  The manager gets an email, but it carries only a pointer (vault name, secret name, retrieval
+  command) - never the pass value - so the credential itself never sits in a mailbox with no
+  access control or audit trail. Aligning both windows to the start date (instead of a short
+  countdown from script-run time) matters because the notification is asynchronous and accounts
+  are often created days before onboarding. Bootstrapping a first credential is inherently
+  out-of-band; if there is no manager, the fallback is a handoff report to the operator.
 - **Written for a human reviewer** - full command and parameter names, comments throughout,
   because I know someone is going to read it, not just run it.
 - **One config replaces six copies** - the department map is the whole difference between one
@@ -73,4 +85,4 @@ The `OfficeLocation`-from-a-new-column change is pre-validated as a clean, ~2-li
 do live under direction, with this finished script as the fallback.
 
 ---
-*Built with Claude (Opus 4.8)*
+*Built with Claude (Opus 4.8); Key Vault TAP delivery added with Claude (Sonnet 5)*

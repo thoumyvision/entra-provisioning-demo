@@ -118,7 +118,30 @@ the date shown to the manager, a quiet, geography-dependent bug of the kind that
 is looking. Pinning the instant to UTC closed it. The point is not that the first cut had a bug; it
 is that a disciplined process expects one and goes looking for it.
 
-### 8. Offline `-WhatIf`: zero setup, zero risk
+### 8. The pass still had to stop living in an inbox
+
+Follow-up interview feedback pushed on this chain one link further: even a one-time, single-use
+Temporary Access Pass has a weaker security property once it is emailed, because the value then
+sits in a mailbox and a mail-relay log indefinitely, with no access control and no audit trail on
+who read it or when.
+
+The first instinct was to ask whether the credential could be removed altogether - some newer
+Microsoft Entra patterns (Verified ID plus Face Check) sounded, from the outside, like they might
+onboard a hire with no bootstrap credential at all. Checking Microsoft's own documentation closed
+that off: Verified ID and Face Check strengthen the identity-proofing step *before* a TAP is
+issued; they do not remove the TAP itself. The only genuinely credential-free path documented is
+admin-side FIDO2 hardware-key provisioning, which requires shipping a physical security key to
+every hire ahead of time - a different onboarding model, not a smaller fix to this one.
+
+So the fix stayed narrow and became a direct parallel to the start-date correction in section 7:
+keep the TAP, change how it is delivered. The pass is now written to a per-hire Azure Key Vault
+secret instead of an email body, and the manager gets a pointer (vault name, secret name, a
+retrieval command) instead of the value. The secret's own readable window - `NotBefore` and
+`Expires` - is set to mirror the TAP's own activation window exactly, so a manager cannot pull
+the value before the pass would even work. That closes the "credential sits around waiting"
+problem for good, instead of just relocating it from a mailbox to a vault.
+
+### 9. Offline `-WhatIf`: zero setup, zero risk
 
 The demo runs in `-WhatIf` mode, fully offline. It connects to no tenant, needs no Graph module
 installed, creates no stray users, and prints exactly what it *would* do. That is itself a
@@ -176,4 +199,4 @@ The tasks are ordered so the script is runnable and reviewable at every step, an
 with a commit.
 
 ---
-*Built with Claude (Opus 4.8)*
+*Built with Claude (Opus 4.8); Key Vault TAP delivery added with Claude (Sonnet 5)*
